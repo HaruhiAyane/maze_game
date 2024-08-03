@@ -3,15 +3,16 @@
 import pygame
 import sys
 import time
+from make_maze import generate_maze
 
 # Pygameの初期化
 pygame.init()
 
 # 画面の設定
 wide_size = 40
-narrow_size = 10
+narrow_size = 4
 # 壁も含んだ maze の長さ
-cols, rows = 15, 15
+cols, rows = 25, 25
 widecols = cols // 2
 narrowcols = (cols + 1) // 2
 widerows = cols // 2
@@ -19,7 +20,8 @@ narrowrows = (cols + 1) // 2
 screen = pygame.display.set_mode(
     (widecols * wide_size + narrow_size * narrowcols, widerows * wide_size + narrowrows * narrow_size)
 )
-pygame.display.set_caption("WASD to Move Character in Maze")
+
+pygame.display.set_caption("maze")
 
 # キャラクターの設定
 character_sprite = pygame.image.load("character.png").convert_alpha()
@@ -31,61 +33,6 @@ character_rect = character_sprite.get_rect()
 # ゴールの設定
 goal_sprite = pygame.image.load("goal.png").convert_alpha()
 goal_sprite = pygame.transform.scale(goal_sprite, (wide_size, wide_size))
-
-# 迷路の定義
-mazes = [
-    [
-        "###############",
-        "#Soooooooo#ooo#",
-        "#########o#o#o#",
-        "#ooo#ooo#o#o#o#",
-        "#o#o#o#o#o###o#",
-        "#o#ooo#o#ooo#o#",
-        "#o#####o###o#o#",
-        "#ooooo#ooo#ooo#",
-        "#####o#######o#",
-        "#ooooo#ooooo#o#",
-        "#o#####o###o#o#",
-        "#o#ooo#o#o#o#o#",
-        "#o#o#o#o#o#o#o#",
-        "#ooo#ooooo#ooG#",
-        "###############",
-    ],
-    [
-        "###############",
-        "#Soooo#ooooooo#",
-        "#####o#o#####o#",
-        "#ooo#ooo#ooo#o#",
-        "#o#######o#o#o#",
-        "#ooooo#ooo#ooo#",
-        "###o#o#o#######",
-        "#ooo#o#ooo#ooo#",
-        "#o#o#####o#o#o#",
-        "#o#o#ooooo#o#o#",
-        "#o###o#####o#o#",
-        "#ooo#ooo#ooo#o#",
-        "#o#o###o###o#o#",
-        "#o#ooooooooo#G#",
-        "###############",
-    ],
-    [
-        "###############",
-        "#S#o#ooo#ooooo#",
-        "#o#o#o#o#o###o#",
-        "#o#ooo#o#o#ooo#",
-        "#o#####o#o#o#o#",
-        "#ooooo#ooo#o#o#",
-        "#####o#o###o###",
-        "#ooo#o#ooo#ooo#",
-        "###o#o###o###o#",
-        "#ooo#ooo#o#ooo#",
-        "#o#o###o###o#o#",
-        "#o#ooo#ooooo#o#",
-        "#o###########o#",
-        "#ooooooooooooG#",
-        "###############",
-    ],
-]
 
 
 # スタート位置とゴール位置を見つける関数
@@ -111,8 +58,7 @@ def to_pixel(x, y):
 
 
 # 現在の迷路を設定
-current_maze_index = 0
-maze = mazes[current_maze_index]
+maze = generate_maze(cols, rows)
 start_pos, goal_pos = find_positions(maze)
 character_pos = start_pos
 
@@ -215,8 +161,7 @@ while True:
         time.sleep(1)  # Clear画面表示時間を変更
 
         # 次の迷路に進む
-        current_maze_index = (current_maze_index + 1) % len(mazes)
-        maze = mazes[current_maze_index]
+        maze = generate_maze(cols, rows)
         start_pos, goal_pos = find_positions(maze)
         character_pos = start_pos
         visited = set()
