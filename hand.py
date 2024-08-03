@@ -1,48 +1,8 @@
-import os
-from dotenv import load_dotenv
-from googleapiclient.discovery import build
+# 手でやってみて、動くかどうか確認する用です
+
 import pygame
 import sys
 import time
-
-# .envファイルの読み込み
-load_dotenv()
-
-# 環境変数の取得
-API_KEY = os.getenv("API_KEY")
-CHANNEL_ID = os.getenv("CHANNEL_ID")
-
-# YouTube APIクライアントの設定
-youtube = build("youtube", "v3", developerKey=API_KEY)
-
-
-def get_live_video_id(channel_id):
-    response = youtube.search().list(part="id", channelId=channel_id, type="video", eventType="live").execute()
-    if "items" in response and len(response["items"]) > 0:
-        live_video_id = response["items"][0]["id"]["videoId"]
-        return live_video_id
-    return None
-
-
-def get_live_chat_id(video_id):
-    response = youtube.videos().list(part="liveStreamingDetails", id=video_id).execute()
-    live_chat_id = response["items"][0]["liveStreamingDetails"]["activeLiveChatId"]
-    return live_chat_id
-
-
-processed_message_ids = []
-
-
-def get_live_chat_messages(live_chat_id):
-    response = (
-        youtube.liveChatMessages().list(liveChatId=live_chat_id, part="snippet,authorDetails", maxResults=200).execute()
-    )
-    messages = response.get("items", [])
-
-    # 未処理のコメントのみをフィルタリング
-    new_messages = [msg for msg in messages if msg["id"] not in processed_message_ids]
-    return new_messages
-
 
 # Pygameの初期化
 pygame.init()
@@ -50,6 +10,7 @@ pygame.init()
 # 画面の設定
 wide_size = 40
 narrow_size = 10
+# 壁も含んだ maze の長さ
 cols, rows = 15, 15
 widecols = cols // 2
 narrowcols = (cols + 1) // 2
@@ -190,68 +151,37 @@ def rotate_and_blit(image, pos, angle):
     screen.blit(rotated_image, new_rect.topleft)
 
 
-def move_character(direction):
-    print(direction)
-    global character_pos
-    new_pos = list(character_pos)
-    via_pos = list(character_pos)
-    if direction == "w":
-        new_pos[1] -= 2
-        via_pos[1] -= 1
-    elif direction == "a":
-        new_pos[0] -= 2
-        via_pos[0] -= 1
-    elif direction == "s":
-        new_pos[1] += 2
-        via_pos[1] += 1
-    elif direction == "d":
-        new_pos[0] += 2
-        via_pos[0] += 1
-
-    if 0 <= new_pos[0] < cols and 0 <= new_pos[1] < rows and 0 <= via_pos[0] < cols and 0 <= via_pos[1] < rows:
-        if maze[new_pos[1]][new_pos[0]] != "#" and maze[via_pos[1]][via_pos[0]] != "#":
-            character_pos = tuple(new_pos)
-            visited_pos = tuple(via_pos)
-            visited.add(character_pos)
-            visited.add(visited_pos)
-
-
-video_id = get_live_video_id(CHANNEL_ID)
-if not video_id:
-    print("ライブビデオが見つかりません")
-    sys.exit()
-
-live_chat_id = get_live_chat_id(video_id)
-if not live_chat_id:
-    print("ライブチャットが見つかりません")
-    sys.exit()
-
-# Pygameのメインループ
+# メインループ
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
 
-    # 10秒ごとにチャットメッセージを取得
-    current_time = time.time()
-    if current_time - last_request_time >= 10:
-        messages = get_live_chat_messages(live_chat_id)
-        for message in messages:
-            print(text)
-            text = message["snippet"]["displayMessage"].lower()
-            for char in text:  # 各文字に対して順番に動作を行う
-                if char == "w" or char == "W":
-                    move_character("w")
-                elif char == "a" or char == "A":
-                    move_character("a")
-                elif char == "s" or char == "S":
-                    move_character("s")
-                elif char == "d" or char == "D":
-                    move_character("d")
-            # コメントを処理済みとしてマーク
-            processed_message_ids.append(message["id"])
-        last_request_time = current_time
+    # キー入力の取得
+    keys = pygame.key.get_pressed()
+    new_pos = list(character_pos)
+    via_pos = list(character_pos)
+    if keys[pygame.K_w]:
+        new_pos[1] -= 2
+        via_pos[1] -= 1
+    if keys[pygame.K_a]:
+        new_pos[0] -= 2
+        via_pos[0] -= 1
+    if keys[pygame.K_s]:
+        new_pos[1] += 2
+        via_pos[1] += 1
+    if keys[pygame.K_d]:
+        new_pos[0] += 2
+        via_pos[0] += 1
+
+    # 衝突判定
+    if 0 <= new_pos[0] < cols and 0 <= new_pos[1] < rows and 0 <= via_pos[0] < cols and 0 <= via_pos[1] < rows:
+        if maze[new_pos[1]][new_pos[0]] != "#" and maze[via_pos[1]][via_pos[0]] != "#":
+            character_pos = tuple(new_pos)
+            visited_pos = tuple(via_pos)
+            visited.add(character_pos)
+            visited.add(visited_pos)
 
     # ゴール判定
     if character_pos == goal_pos:
