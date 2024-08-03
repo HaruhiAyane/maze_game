@@ -41,7 +41,7 @@ def maze_to_string(maze):
     return ["".join(row) for row in maze]
 
 
-width, height = 11, 11
+width, height = 15, 15
 maze = generate_maze(width, height)
 print_maze(maze)
 
